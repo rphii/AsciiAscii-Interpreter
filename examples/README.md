@@ -16,3 +16,6 @@ Prints -1
 ## thruth_machine.ascii2
 * Enter a 0 -> output 0 once
 * Enter a 1 -> output 1 infinitely
+
+## ascii.ascii2
+Prints the ASCII table from ` ` (31) up to `~` (126)
