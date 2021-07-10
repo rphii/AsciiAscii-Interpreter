@@ -42,9 +42,6 @@ SOFTWARE.
 #define TABLE_SIZE          256
 #define LEX_BATCH           16
 
-#define STACK_BATCH         256
-#define LAYER_BATCH         256
-
 /** DEBUG_LEVEL
  * 0 : shows no debug messages (DEBUG_LEVEL_0)
  * 1 : shows generated code: original & optimized (DEBUG_LEVEL_2 + DEBUG_LEVEL_1)
@@ -143,14 +140,6 @@ typedef struct
     bool used[NVARS];
 }
 layers_t;
-
-typedef struct
-{
-    uint32_t length;
-    uint32_t batches;
-    intptr_t *bottom;
-}
-stack_t;
 
 typedef struct exe_s
 {
