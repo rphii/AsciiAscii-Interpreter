@@ -154,6 +154,7 @@ stack_t;
 
 typedef struct exe_s
 {
+    uint32_t for_positions[NVARS];
     int32_t *vars_source;
     int32_t *vars_other;
     vars_t bank_both;
@@ -179,10 +180,6 @@ static int lex_do(lex_t *lex, char *str);
 static bool var_get(exe_t *exe, int32_t *vars, uint32_t var, int32_t **value);
 static bool exe_init(exe_t *exe);
 static int execute(lex_t *lex);
-static bool stack_init(stack_t *stack, uint32_t batches);
-static bool stack_push(stack_t *stack, intptr_t value);
-static bool stack_peek(stack_t *stack, intptr_t *value);
-static bool stack_pop(stack_t *stack, intptr_t *value);
 static void list_flags();
 
 #define ASCIIASCII_MAIN_H
