@@ -469,10 +469,12 @@ static inline int lex_do(lex_t *tokens, char *str)
         free(tuple);
         // error: check if leai[] is not all 0's
         bool missing_leai = false;
+        int missing_pos = 0;
         for(int i = 0; i < NVARS; i++)
         {
             if(leai[i])
             {
+                missing_pos = i;
                 missing_leai = true;
                 break;
             }
@@ -480,7 +482,7 @@ static inline int lex_do(lex_t *tokens, char *str)
         // any errors?
         if(missing_leai)
         {
-            fprintf(stderr, "There is a missing loop, else or end.\n");
+            fprintf(stderr, "There is a missing loop, else or end. (maybe it is %c)\n", missing_pos);
             return __LINE__;
         }
     }
@@ -527,12 +529,10 @@ static inline bool exe_init(exe_t *exe)
 static inline int execute(lex_t *tokens)
 {
     if(!tokens || !tokens->token || !tokens->value) return __LINE__;
-    // init hash table
+    // init exe
     exe_t exe = {0};
     if(!exe_init(&exe)) return __LINE__;
     // execute
-    stack_t for_stack = {0};
-    if(!stack_init(&for_stack, STACK_BATCH)) return __LINE__;
     uint32_t i = 0;
     bool running = true;
     while(running)
@@ -585,18 +585,16 @@ static inline int execute(lex_t *tokens)
                 uint32_t var = lex_value;
                 // get value of variable associated with the loop
                 if(!var_get(&exe, exe.vars_source, var, &value)) return __LINE__;
-                // get variale at top of if-stack
                 bool inloop = ((exe.layers.used)[var] == true);
                 // is the value associated with the loop not zero?
                 if(*value)
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "value is not zero");
-                    // are the vars associated with top of if-stack and loop not equal? or is the stack empty?
+                    // are we in a loop?
                     if(!inloop)
                     {
-                        // var isn't in the stack yet, add it
-                        //if(!stack_push(&for_stack, (intptr_t)*lex)) return __LINE__;       // push lexer position to jump back
-                        if(!stack_push(&for_stack, i - 1)) return __LINE__;
+                        // var isn't stored yet, add it
+                        exe.for_positions[var] = i - 1;
                         exe.layers.used[var] = true;
                         exe.layers.value[var] = &exe.vars_source[var];
                         exe.layers.initial[var] = exe.vars_source[var];
@@ -619,14 +617,13 @@ static inline int execute(lex_t *tokens)
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "value is zero");
                     // value associated with loop is zero, invert original value -> loop is over
-                    // is the value in the stack? or in other words, was the loop touched?
+                    // was the loop touched?
                     if(inloop)
                     {
-                        // stack operations
-                        DEBUG_PRINT(DEBUG_LEVEL_3, "get rid of stack for value");
-                        if(!stack_pop(&for_stack, (intptr_t *)0)) return __LINE__;      // pop initial for address
+                        DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                        exe.for_positions[var] = 0;
                         exe.layers.used[var] = 0;
-                        exe.layers.value[var] = 0;  // TODO INITIAL !!!!
+                        exe.layers.value[var] = 0;
                         DEBUG_PRINT(DEBUG_LEVEL_3, "invert original number");
                         *value = -exe.layers.initial[var];                              // invert value
                         // go to end end of else
@@ -640,7 +637,6 @@ static inline int execute(lex_t *tokens)
                                 if(tokens->value[i] == var) break; // also, the var is equal to the var of this loop?
                             }
                         }
-                        //while(*lex && (*lex)->token != TOKEN_ELSE_END) *lex = (*lex)->next;
                     }
                     else
                     {
@@ -691,8 +687,7 @@ static inline int execute(lex_t *tokens)
             } break;
             case TOKEN_FOR_END:
             {
-                if(!stack_peek(&for_stack, (intptr_t *)&i)) return __LINE__;
-                // no code required
+                i = exe.for_positions[lex_value];
             } break;
             case TOKEN_ELSE_END:
             {
@@ -749,80 +744,6 @@ static inline int execute(lex_t *tokens)
     return 0;
 }
 
-static inline bool stack_init(stack_t *stack, uint32_t batches)
-{
-    DEBUG_PRINT(DEBUG_LEVEL_3, "init stack");
-    bool result = false;
-    bool init = true;
-    if(stack->bottom)
-    {
-        init = false;
-    }
-    stack->bottom = realloc(stack->bottom, sizeof(intptr_t) * batches);
-    if(stack->bottom)
-    {
-        result = true;
-        DEBUG_PRINT(DEBUG_LEVEL_3, "init stack successful");
-    }
-    else
-    {
-        stack->bottom = 0;
-    }
-    if(init || !stack->bottom)
-    {
-        stack->length = 0;
-    }
-    stack->batches = result * batches;
-    return result;
-}
-
-static inline bool stack_push(stack_t *stack, intptr_t value)
-{
-    bool result = true;
-    DEBUG_PRINT(DEBUG_LEVEL_3, "push stack");
-    if((stack->length && !(stack->length % STACK_BATCH)) || !stack->batches)
-    {
-        result &= stack_init(stack, stack->batches + STACK_BATCH + 1);
-    }
-    if(result && stack->batches)
-    {
-        stack->bottom[stack->length] = value;
-        stack->length++;
-        DEBUG_PRINT(DEBUG_LEVEL_3, "push stack successful");
-    }
-    return result;
-}
-
-static inline bool stack_peek(stack_t *stack, intptr_t *value)
-{
-    bool result = false;
-    DEBUG_PRINT(DEBUG_LEVEL_3, "peek stack");
-    if(stack->length)
-    {
-        *value = stack->bottom[stack->length - 1];
-        result = true;
-        DEBUG_PRINT(DEBUG_LEVEL_3, "peek stack successful");
-    }
-    return result;
-}
-
-static inline bool stack_pop(stack_t *stack, intptr_t *value)
-{
-    bool result = false;
-    DEBUG_PRINT(DEBUG_LEVEL_3, "pop stack");
-    if(stack->length)
-    {
-        stack->length--;
-        if(value)
-        {
-            *value = stack->bottom[stack->length];
-        }
-        DEBUG_PRINT(DEBUG_LEVEL_3, "pop stack successful");
-        result = true;
-    }
-    return result;
-}
-
 static void list_flags()
 {
     fprintf(stderr, "(you can also leave the flags empty)\n");
@@ -851,6 +772,7 @@ int main(int argc, char **args)
         if(args[i][0] == '-')
         {
             str_set(&arg, "%s", &args[i][1]);
+            str_set(&flag, "D0");
             if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_0;
             str_set(&flag, "D1");
             if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_1;
