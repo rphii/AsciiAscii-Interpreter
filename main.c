@@ -674,6 +674,10 @@ static inline int execute(lex_t *tokens)
                         }
                     }
                 }
+                else
+                {
+                    *value *= -1;
+                }
             } break;
             case TOKEN_INVERT:
             {
