@@ -75,7 +75,7 @@ typedef enum
     TOKEN_INVERT,
     TOKEN_FOR,
     TOKEN_FOR_END,
-    TOKEN_IF_ELSE,
+    TOKEN_IF_NOT,
     TOKEN_ELSE,
     TOKEN_ELSE_END,
     TOKEN_INPUT_CH,
@@ -96,7 +96,7 @@ char *token_s[] =
     "TOKEN_INVERT",
     "TOKEN_FOR",
     "TOKEN_FOR_END",
-    "TOKEN_IF_ELSE",
+    "TOKEN_IF_NOT",
     "TOKEN_ELSE",
     "TOKEN_ELSE_END",
     "TOKEN_INPUT_CH",
@@ -160,7 +160,6 @@ static bool lex_add(lex_t *list, token_t token, uint32_t value);
 static bool lex_free(lex_t *list);
 static bool lex_optimize(lex_t *list);
 static bool lex_swap(lex_t *a, lex_t *b);
-static bool lex_clean(lex_t *list);
 static void lex_print(lex_t *lex);
 static void init_vars(int32_t *vars, uint32_t n);
 static bool vars_add(vars_t *table, int32_t key);
