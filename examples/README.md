@@ -18,4 +18,4 @@ Prints -1
 * Enter a 1 -> output 1 infinitely
 
 ## ascii.ascii2
-Prints the ASCII table from ` ` (31) up to `~` (126)
+Prints the ASCII table from ` ` (32) up to `~` (126)
