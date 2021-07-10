@@ -155,6 +155,7 @@ exe_t;
 // functions
 static uint32_t hash_index(uint32_t bits, uint32_t mask, uint32_t value);
 static bool vars_init(vars_t *table, uint32_t lookup_size);
+static bool vars_free(vars_t *table);
 static bool lex_init(lex_t *list, uint32_t size);
 static bool lex_add(lex_t *list, token_t token, uint32_t value);
 static bool lex_free(lex_t *list);

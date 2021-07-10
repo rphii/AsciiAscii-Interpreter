@@ -55,6 +55,24 @@ static inline bool vars_init(vars_t *table, uint32_t lookup_size)
     return true;
 }
 
+static bool vars_free(vars_t *table)
+{
+    if(!table) return false;
+    // for each node
+    for(uint32_t i = 0; i < table->lookup_size; i++)
+    {
+        // for each used node
+        for(uint32_t j = 0; j < table->node[i].used; j++)
+        {
+            free(table->node[i].vars[j]);
+        }
+        free(table->node[i].bank);
+        free(table->node[i].vars);
+    }
+    free(table->node);
+    return true;
+}
+
 static inline bool lex_init(lex_t *lex, uint32_t size)
 {
     DEBUG_PRINT(DEBUG_LEVEL_3, "init lex");
@@ -94,8 +112,8 @@ static inline bool lex_add(lex_t *lex, token_t token, uint32_t value)
         {
             lex->value[lex->used] = (intptr_t)malloc(sizeof(int32_t) * 2);
             if(!(lex->value[lex->used])) return false;
-            ((int32_t *)(lex->value[lex->used]))[0] = ((int32_t *)value)[0];
-            ((int32_t *)(lex->value[lex->used]))[1] = ((int32_t *)value)[1];
+            ((uint32_t *)(lex->value[lex->used]))[0] = ((uint32_t *)value)[0];
+            ((uint32_t *)(lex->value[lex->used]))[1] = ((uint32_t *)value)[1];
         } break;
         case TOKEN_INPUT_NB:
         case TOKEN_INPUT_CH:
@@ -511,7 +529,6 @@ static inline bool exe_init(exe_t *exe)
     return result;
 }
 
-
 static inline int execute(lex_t *tokens)
 {
     if(!tokens || !tokens->token || !tokens->value) return __LINE__;
@@ -726,6 +743,7 @@ static inline int execute(lex_t *tokens)
         // next instruction
         i++;
     }
+    if(!vars_free(&exe.bank_both)) return __LINE__;
     // success
     return 0;
 }
