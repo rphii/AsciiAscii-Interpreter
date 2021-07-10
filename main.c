@@ -770,6 +770,13 @@ int main(int argc, char **args)
         fprintf(stderr, "==== AsciiAscii Interpreter by rphii ====\n");
         fprintf(stderr, "Incorrect usage... See below:\n");
         fprintf(stderr, "AsciiAscii-Interpreter -F Filename.ascii2\n");
+        fprintf(stderr, "Or enter a file now: ");
+        str_t file = {0};
+        io_user_get_str(&file);
+        if(!io_file_read(&code, (char *)file.s))
+        {
+            fprintf(stderr, "Could not find or open file.\n");
+        }
     }
     for(int i = 1; i < argc; i++)
     {
@@ -793,32 +800,27 @@ int main(int argc, char **args)
         }
         else
         {
-            // ==== WORKING CODE ==== (see examples folder)
-            // "`222211`220`220`"                       // truth machine
-            // "H`e`l`l`o`,` `W`o`r`l`d`!`a0a9a1a`"     // hello world
-            // "1111111`"                               // print -1
-            // "L0L1`ILL``````III1I`L2I0IIL0IILLLL"     // cat
-            
             if(!io_file_read(&code, args[i]))
             {
                 fprintf(stderr, "Could not find or open file.\n");
             }
-            else
-            {
-                // start lexing
-                lex_t lex = {0};
-                
-                DEBUG_CODE(DEBUG_LEVEL_2, printf("[Note] Lexing\n"));
-                if(!result) result = lex_do(&lex, (char *)code.s);
-                DEBUG_CODE(DEBUG_LEVEL_2, printf("\n[Note] Executing\n"));
-                // execute
-                if(!result) result = execute(&lex);
-                DEBUG_CODE(DEBUG_LEVEL_2, printf("\n[Note] Finished\n"));
-                DEBUG_CODE(DEBUG_LEVEL_0, printf("\n"));
-                
-                lex_free(&lex);
-            }
         }
+    }
+    // if there is code
+    if(code.s)
+    {
+        // start lexing
+        lex_t lex = {0};
+        
+        DEBUG_CODE(DEBUG_LEVEL_2, printf("[Note] Lexing\n"));
+        if(!result) result = lex_do(&lex, (char *)code.s);
+        DEBUG_CODE(DEBUG_LEVEL_2, printf("\n[Note] Executing\n"));
+        // execute
+        if(!result) result = execute(&lex);
+        DEBUG_CODE(DEBUG_LEVEL_2, printf("\n[Note] Finished\n"));
+        DEBUG_CODE(DEBUG_LEVEL_0, printf("\n"));
+        
+        lex_free(&lex);
     }
     // finished
     str_free(&arg);
