@@ -104,7 +104,7 @@ static inline bool lex_add(lex_t *lex, token_t token, uint32_t value)
         case TOKEN_MEM_SET:
         case TOKEN_MEM_SWAP:
         case TOKEN_MEM_BOTH:
-        case TOKEN_IF_ELSE:
+        case TOKEN_IF_NOT:
         case TOKEN_ELSE:
         case TOKEN_ELSE_END:
         case TOKEN_FOR:
@@ -141,8 +141,11 @@ static inline bool lex_free(lex_t *lex)
 static inline bool lex_optimize(lex_t *lex)
 {
     if(!lex) return false;
+    lex_t optimized = {0};
+    if(!lex_init(&optimized, LEX_BATCH)) return false;
     for(int32_t i = 0; i < lex->used; i++)
     {
+        bool handled = false;
         token_t *token = &lex->token[i];
         intptr_t *value = &lex->value[i];
         // look ahead four values
@@ -155,10 +158,8 @@ static inline bool lex_optimize(lex_t *lex)
                if(value[0] == value[1] && value[1] == value[2] && value[2] == value[3])
                {
                    DEBUG_PRINT(DEBUG_LEVEL_3, "we can shrink empty leai to invert");
-                   token[0] = TOKEN_INVERT;
-                   token[1] = TOKEN_NONE;
-                   token[2] = TOKEN_NONE;
-                   token[3] = TOKEN_NONE;
+                   if(!lex_add(&optimized, TOKEN_INVERT, *value)) return false;
+                   handled = true;
                    i += 3;
                    continue;
                }
@@ -173,9 +174,8 @@ static inline bool lex_optimize(lex_t *lex)
                 if(value[0] == value[1] && value[1] == value[2])
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "we set both banks immediately");
-                    token[0] = TOKEN_MEM_BOTH;
-                    token[1] = TOKEN_NONE;
-                    token[2] = TOKEN_NONE;
+                    if(!lex_add(&optimized, TOKEN_MEM_BOTH, *value)) return false;
+                    handled = true;
                     i+= 2;
                     continue;
                 }
@@ -186,9 +186,8 @@ static inline bool lex_optimize(lex_t *lex)
                 if(value[0] == value[1] && value[1] == value[2])
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "we can skip the loop");
-                    token[0] = TOKEN_IF_ELSE;
-                    token[1] = TOKEN_NONE;
-                    token[2] = TOKEN_NONE;
+                    if(!lex_add(&optimized, TOKEN_IF_NOT, *value)) return false;
+                    handled = true;
                     i += 2;
                     continue;
                 }
@@ -198,7 +197,14 @@ static inline bool lex_optimize(lex_t *lex)
         if(i < lex->used - 1)
         {
         }
+        // unhandled case
+        if(!handled)
+        {
+            if(!lex_add(&optimized, token[0], *value)) return false;
+        }
     }
+    if(!lex_swap(lex, &optimized)) return false;
+    if(!lex_free(&optimized)) return false;
     return true;
 }
 
@@ -227,25 +233,6 @@ static inline bool lex_swap(lex_t *a, lex_t *b)
     return true;
 }
 
-static inline bool lex_clean(lex_t *lex)
-{
-    DEBUG_PRINT(DEBUG_LEVEL_3, "clean tokens");
-    if(!lex) return false;
-    lex_t compact = {0};
-    lex_init(&compact, LEX_BATCH);
-    for(int32_t i = 0; i < lex->used; i++)
-    {
-        if(lex->token[i])
-        {
-            if(!lex_add(&compact, lex->token[i], lex->value[i])) return false;
-        }
-    }
-    lex_free(lex);
-    lex_swap(lex, &compact);
-    DEBUG_PRINT(DEBUG_LEVEL_3, "clean tokens successful");
-    return true;
-}
-
 static inline void lex_print(lex_t *tokens)
 {
     if(!tokens) return;
@@ -269,7 +256,7 @@ static inline void lex_print(lex_t *tokens)
         switch(tokens->token[i])
         {
             case TOKEN_FOR:
-            case TOKEN_IF_ELSE:
+            case TOKEN_IF_NOT:
             case TOKEN_ELSE:
                 layer++;
                 DEBUG_CODE(DEBUG_LEVEL_1, printf(" '%c'", tokens->value[i]));
@@ -491,7 +478,6 @@ static inline int lex_do(lex_t *tokens, char *str)
     DEBUG_CODE(DEBUG_LEVEL_1, printf("==== ORIGINAL LIST ====\n"));
     DEBUG_CODE(DEBUG_LEVEL_1, lex_print(tokens));
     if(!lex_optimize(tokens)) return __LINE__;
-    if(!lex_clean(tokens)) return __LINE__;
     DEBUG_CODE(DEBUG_LEVEL_1, printf("==== OPTIMIZED LIST ====\n"));
     DEBUG_CODE(DEBUG_LEVEL_1, lex_print(tokens));
     return 0;
@@ -654,7 +640,7 @@ static inline int execute(lex_t *tokens)
                     }
                 }
             } break;
-            case TOKEN_IF_ELSE:
+            case TOKEN_IF_NOT:
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
