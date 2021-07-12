@@ -661,8 +661,10 @@ static inline int execute(lex_t *tokens)
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
+                bool not_value = false;
                 if(*value)
                 {
+                    not_value = true;
                     // skip to end of else
                     for(;;)
                     {
@@ -673,7 +675,17 @@ static inline int execute(lex_t *tokens)
                         }
                     }
                 }
-                else
+                bool inloop = ((exe.layers.used)[lex_value] == true);
+                if(inloop)
+                {
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                    exe.for_positions[lex_value] = 0;
+                    exe.layers.used[lex_value] = 0;
+                    exe.layers.value[lex_value] = 0;
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "invert original number");
+                    *value = -exe.layers.initial[lex_value];                              // invert value
+                }
+                if(not_value)
                 {
                     *value *= -1;
                 }
@@ -682,6 +694,16 @@ static inline int execute(lex_t *tokens)
             {
                 intptr_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
+                bool inloop = ((exe.layers.used)[lex_value] == true);
+                if(inloop)
+                {
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                    exe.for_positions[lex_value] = 0;
+                    exe.layers.used[lex_value] = 0;
+                    exe.layers.value[lex_value] = 0;
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "invert original number");
+                    *value = -exe.layers.initial[lex_value];                              // invert value
+                }
                 *value *= -1;
             } break;
             case TOKEN_ELSE:
