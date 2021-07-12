@@ -163,7 +163,6 @@ static inline bool lex_optimize(lex_t *lex)
     if(!lex_init(&optimized, LEX_BATCH)) return false;
     for(int32_t i = 0; i < lex->used; i++)
     {
-        bool handled = false;
         token_t *token = &lex->token[i];
         intptr_t *value = &lex->value[i];
         // look ahead four values
@@ -177,7 +176,6 @@ static inline bool lex_optimize(lex_t *lex)
                {
                    DEBUG_PRINT(DEBUG_LEVEL_3, "we can shrink empty leai to invert");
                    if(!lex_add(&optimized, TOKEN_INVERT, *value)) return false;
-                   handled = true;
                    i += 3;
                    continue;
                }
@@ -193,7 +191,6 @@ static inline bool lex_optimize(lex_t *lex)
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "we set both banks immediately");
                     if(!lex_add(&optimized, TOKEN_MEM_BOTH, *value)) return false;
-                    handled = true;
                     i+= 2;
                     continue;
                 }
@@ -205,7 +202,6 @@ static inline bool lex_optimize(lex_t *lex)
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "we can skip the loop");
                     if(!lex_add(&optimized, TOKEN_IF_NOT, *value)) return false;
-                    handled = true;
                     i += 2;
                     continue;
                 }
@@ -215,11 +211,8 @@ static inline bool lex_optimize(lex_t *lex)
         if(i < lex->used - 1)
         {
         }
-        // unhandled case
-        if(!handled)
-        {
-            if(!lex_add(&optimized, token[0], *value)) return false;
-        }
+        // unhandled case (because we didn't continue)
+        if(!lex_add(&optimized, token[0], *value)) return false;
     }
     if(!lex_swap(lex, &optimized)) return false;
     if(!lex_free(&optimized)) return false;
@@ -661,6 +654,14 @@ static inline int execute(lex_t *tokens)
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
+                bool inloop = ((exe.layers.used)[lex_value] == true);
+                if(inloop)
+                {
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                    exe.for_positions[lex_value] = 0;
+                    exe.layers.used[lex_value] = 0;
+                    exe.layers.value[lex_value] = 0;
+                }
                 if(*value)
                 {
                     // skip to end of else
@@ -682,6 +683,14 @@ static inline int execute(lex_t *tokens)
             {
                 intptr_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
+                bool inloop = ((exe.layers.used)[lex_value] == true);
+                if(inloop)
+                {
+                    DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                    exe.for_positions[lex_value] = 0;
+                    exe.layers.used[lex_value] = 0;
+                    exe.layers.value[lex_value] = 0;
+                }
                 *value *= -1;
             } break;
             case TOKEN_ELSE:
@@ -710,6 +719,7 @@ static inline int execute(lex_t *tokens)
                     *value = ((char *)str.s)[k];
                 }
                 // terminating character
+                if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
                 if(!vars_get(&exe.bank_both, &exe.vars_source, str.l)) return __LINE__;
                 *value = 0;
                 // return to initial bank
@@ -777,6 +787,8 @@ int main(int argc, char **args)
         {
             fprintf(stderr, "Could not find or open file.\n");
         }
+        DEBUG_LEVEL = 1;
+        str_free(&file);
     }
     for(int i = 1; i < argc; i++)
     {
@@ -803,6 +815,7 @@ int main(int argc, char **args)
             if(!io_file_read(&code, args[i]))
             {
                 fprintf(stderr, "Could not find or open file.\n");
+                break;
             }
         }
     }
