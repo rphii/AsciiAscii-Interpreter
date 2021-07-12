@@ -34,7 +34,10 @@ bool str_append_va(str_t *str, char *format, va_list argp)
     
     // caller has to va_start and va_end before / after calling this function!
     bool result = false;
-    int64_t len_app = vsnprintf(0, 0, format, argp);
+    va_list argl = 0;
+    va_copy(argl, argp);    // TODO check for error
+    int64_t len_app = vsnprintf(0, 0, format, argl);
+    va_end(argl);
     if(len_app < 0) return false;
     int len_new = (STR_BATCH) * (uint64_t)((str->l + len_app) / (STR_BATCH) + 1);
     if(len_new != str->n)
