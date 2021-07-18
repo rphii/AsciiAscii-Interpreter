@@ -658,6 +658,7 @@ static inline int execute(lex_t *tokens)
                 if(inloop)
                 {
                     DEBUG_PRINT(DEBUG_LEVEL_3, "reset initial values");
+                    *value = -exe.layers.initial[lex_value];                              // invert value TODO check
                     exe.for_positions[lex_value] = 0;
                     exe.layers.used[lex_value] = 0;
                     exe.layers.value[lex_value] = 0;
