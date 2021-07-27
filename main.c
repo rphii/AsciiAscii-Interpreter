@@ -710,7 +710,7 @@ static inline int execute(lex_t *tokens)
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
-                str_t str = {0};
+                str_s str = {0};
                 uint32_t bank = exe.bank;
                 if(!io_user_get_str(&str)) return __LINE__;
                 for(uint32_t k = 0; k <= str.l; k++)
@@ -773,16 +773,16 @@ static void list_flags()
 int main(int argc, char **args)
 {
     int result = 0;
-    str_t arg = {0};
-    str_t code = {0};
-    str_t flag = {0};
+    str_s arg = {0};
+    str_s code = {0};
+    str_s flag = {0};
     if(argc < 2)
     {
         fprintf(stderr, "==== AsciiAscii Interpreter by rphii ====\n");
         fprintf(stderr, "Incorrect usage... See below:\n");
         fprintf(stderr, "AsciiAscii-Interpreter -F Filename.ascii2\n");
         fprintf(stderr, "Or enter a file now: ");
-        str_t file = {0};
+        str_s file = {0};
         io_user_get_str(&file);
         if(!io_file_read(&code, (char *)file.s))
         {
