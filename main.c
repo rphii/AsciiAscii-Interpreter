@@ -710,9 +710,9 @@ static inline int execute(lex_t *tokens)
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
-                str_s str = {0};
+                sstr_s str = {0};
                 uint32_t bank = exe.bank;
-                if(!io_user_get_str(&str)) return __LINE__;
+                if(!sio_user_get_str(&str)) return __LINE__;
                 for(uint32_t k = 0; k <= str.l; k++)
                 {
                     if(!vars_get(&exe.bank_both, &exe.vars_source, bank++)) return __LINE__;
@@ -725,13 +725,13 @@ static inline int execute(lex_t *tokens)
                 *value = 0;
                 // return to initial bank
                 if(!vars_get(&exe.bank_both, &exe.vars_source, exe.bank)) return __LINE__;
-                str_free(&str);
+                sstr_free(&str);
             } break;
             case TOKEN_INPUT_NB:
             {
                 int32_t *value = 0;
                 if(!var_get(&exe, exe.vars_source, lex_value, &value)) return __LINE__;
-                io_user_get_int32(value, true);
+                sio_user_get_int32(value, true);
             } break;
             case TOKEN_OUTPUT_CH:
             {
@@ -773,39 +773,39 @@ static void list_flags()
 int main(int argc, char **args)
 {
     int result = 0;
-    str_s arg = {0};
-    str_s code = {0};
-    str_s flag = {0};
+    sstr_s arg = {0};
+    sstr_s code = {0};
+    sstr_s flag = {0};
     if(argc < 2)
     {
         fprintf(stderr, "==== AsciiAscii Interpreter by rphii ====\n");
         fprintf(stderr, "Incorrect usage... See below:\n");
         fprintf(stderr, "AsciiAscii-Interpreter -F Filename.ascii2\n");
         fprintf(stderr, "Or enter a file now: ");
-        str_s file = {0};
-        io_user_get_str(&file);
-        if(!io_file_read(&code, (char *)file.s))
+        sstr_s file = {0};
+        sio_user_get_str(&file);
+        if(!sio_file_read(&code, (char *)file.s))
         {
             fprintf(stderr, "Could not find or open file.\n");
         }
         DEBUG_LEVEL = 1;
-        str_free(&file);
+        sstr_free(&file);
     }
     for(int i = 1; i < argc; i++)
     {
         if(args[i][0] == '-')
         {
-            str_set(&arg, "%s", &args[i][1]);
-            str_set(&flag, "D0");
-            if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_0;
-            str_set(&flag, "D1");
-            if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_1;
-            str_set(&flag, "D2");
-            if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_2;
-            str_set(&flag, "D3");
-            if(str_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_3;
-            str_set(&flag, "F");
-            if(str_cmp(&arg, &flag))
+            sstr_set(&arg, "%s", &args[i][1]);
+            sstr_set(&flag, "D0");
+            if(sstr_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_0;
+            sstr_set(&flag, "D1");
+            if(sstr_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_1;
+            sstr_set(&flag, "D2");
+            if(sstr_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_2;
+            sstr_set(&flag, "D3");
+            if(sstr_cmp(&arg, &flag)) DEBUG_LEVEL = DEBUG_LEVEL_3;
+            sstr_set(&flag, "F");
+            if(sstr_cmp(&arg, &flag))
             {
                 list_flags();
                 return 0;
@@ -813,7 +813,7 @@ int main(int argc, char **args)
         }
         else
         {
-            if(!io_file_read(&code, args[i]))
+            if(!sio_file_read(&code, args[i]))
             {
                 fprintf(stderr, "Could not find or open file.\n");
                 break;
@@ -837,9 +837,9 @@ int main(int argc, char **args)
         lex_free(&lex);
     }
     // finished
-    str_free(&arg);
-    str_free(&code);
-    str_free(&flag);
+    sstr_free(&arg);
+    sstr_free(&code);
+    sstr_free(&flag);
     return result;
 }
 

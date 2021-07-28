@@ -34,8 +34,8 @@ SOFTWARE.
 #include <stdbool.h>
 #include <stdarg.h>
 
-#include "str.h"
-#include "io.h"
+#include "sstr.h"
+#include "sio.h"
 
 #define HASH_BITS           10
 #define NVARS               256   // actually it is one less but this makes it easier
